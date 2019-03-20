@@ -1,3 +1,28 @@
+List<List<PBXLinePushListType>> chunkList = chunk(pbxLinePushArray, 50);
+//create chuncks of lists based on chunk size
+public <T> List<List<T>> chunk(List<T> input, int chunkSize) {
+
+		int inputSize = input.size();
+		int chunkCount = (int) Math.ceil(inputSize / (double) chunkSize);
+
+		Map<Integer, List<T>> map = new HashMap<>(chunkCount);
+		List<List<T>> chunks = new ArrayList<>(chunkCount);
+
+		for (int i = 0; i < inputSize; i++) {
+
+			map.computeIfAbsent(i / chunkSize, (ignore) -> {
+
+				List<T> chunk = new ArrayList<>();
+				chunks.add(chunk);
+				return chunk;
+
+			}).add(input.get(i));
+		}
+		return chunks;
+	}
+
+
+
 List<PushResponseList> responseList = Collections.synchronizedList(new ArrayList<>());
 List<Callable<PushResponseList>> partitions = new ArrayList<Callable<PushResponseList>>();
 final ExecutorService service = Executors.newFixedThreadPool(chunkList.size());
@@ -36,6 +61,7 @@ responseList.forEach(eachResponse -> Arrays.stream(eachResponse.getResponseArray
 			}
 		}
 	} 
+	
   
   final class Worker implements Callable<PushResponseList> {
 
