@@ -3,6 +3,7 @@
 //3-worker class to process each partition
 //4-invoke executor service and get the results from Future
 //5-for each partition get the result and add those to synchronized response list
+//6-shutdown the executor service in the finally block
 
 
 List<List<PBXLinePushListType>> chunkList = chunk(pbxLinePushArray, 50);
