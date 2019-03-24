@@ -1,0 +1,92 @@
+List<List<PBXLinePushListType>> chunkList = chunk(pbxLinePushArray, 50);
+//create chuncks of lists based on chunk size
+public <T> List<List<T>> chunk(List<T> input, int chunkSize) {
+
+		int inputSize = input.size();
+		int chunkCount = (int) Math.ceil(inputSize / (double) chunkSize);
+
+		Map<Integer, List<T>> map = new HashMap<>(chunkCount);
+		List<List<T>> chunks = new ArrayList<>(chunkCount);
+
+		for (int i = 0; i < inputSize; i++) {
+
+			map.computeIfAbsent(i / chunkSize, (ignore) -> {
+
+				List<T> chunk = new ArrayList<>();
+				chunks.add(chunk);
+				return chunk;
+
+			}).add(input.get(i));
+		}
+		return chunks;
+	}
+
+
+
+List<PushResponseList> responseList = Collections.synchronizedList(new ArrayList<>());
+List<Callable<PushResponseList>> partitions = new ArrayList<Callable<PushResponseList>>();
+final ExecutorService service = Executors.newFixedThreadPool(chunkList.size());
+
+try{
+  for(List<PBXLinePushListType> eachList : chunkList)
+  {
+    partitions.add(new Worker(eachList,impl,requestHeader));
+  }
+
+  final List<Future<PushResponseList>> resultsFromParts = service.invokeAll(partitions);
+
+  for(final Future<PushResponseList> result : resultsFromParts){
+    responseList.add(result.get());
+  }
+
+}catch (Exception e){
+  throw new RuntimeException(e);
+}finally{
+  service.shutdown();
+}
+
+responseList.forEach(eachResponse -> Arrays.stream(eachResponse.getResponseArray().getStatusList())
+						.forEach(cssopStatus -> populateTnList(cssopStatus,pbxLinePushArray,successTNList,failedTNMap,failedCurrentTnList)));
+            
+ private void populateTnList(RequestStatusType cssopStatus, List<PBXLinePushListType> pbxLinePushArray,List<String> successTNList,
+								Map<String, String> failedTNMap,List<Map<String, String>> failedCurrentTnList){
+
+		Optional<PBXLinePushListType> pbxLine = pbxLinePushArray.stream().filter(line -> line.getPBXLine().getPBXTNID().equals(cssopStatus.getResourceID())).findAny();
+		if (pbxLine.isPresent()) {
+			String value = pbxLine.get().getPBXLine().getTN();
+			if (cssopStatus.getErrorCode() == 0) {
+				successTNList.add(value);
+			} else {
+				//check error
+			}
+		}
+	} 
+	
+  
+  final class Worker implements Callable<PushResponseList> {
+
+		private final PBXLinePush impl;
+		private final HeaderType requestHeader;
+		private final List<PBXLinePushListType> pbxLineList;
+
+		Worker(final List<PBXLinePushListType> pbxLineList, final PBXLinePush impl, final HeaderType requestHeader) {
+			this.pbxLineList = pbxLineList;
+			this.impl = impl;
+			this.requestHeader=requestHeader;
+		}
+
+		@Override
+		public PushResponseList call() {
+			log.info("call()::Entry");
+			PushResponseList pushResponseList = null;
+			try {
+				pushResponseList = impl.calltoCSSOPClient(pbxLineList, requestHeader);
+			} catch (Exception e) {
+				log.info("Exception in call() while calling cssop service: " + e);
+				List<String> failedTnList = pbxLineList.stream().map(line -> line.getPBXLine().getTN()).collect(Collectors.toList());
+				updateFailedTnStatus_bulk_del_pbx_tn(failedTnList, e.getMessage());
+			}
+			log.info("call()::Exit");
+			return pushResponseList;
+		}
+	}
