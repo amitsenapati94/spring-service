@@ -1,3 +1,9 @@
+//1-create partitions from a list of objects
+//2-create list of Callable Tasks
+//3-worker class to process each partition
+//4-invoke executor service and get the results from Future
+
+
 List<List<PBXLinePushListType>> chunkList = chunk(pbxLinePushArray, 50);
 //create chuncks of lists based on chunk size
 public <T> List<List<T>> chunk(List<T> input, int chunkSize) {
