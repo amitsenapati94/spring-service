@@ -535,4 +535,163 @@ public class OrderDetailsService {
 
 }
 
+OrderDetailsServiceTest.java
+****************************
+
+package com.vz.esap.caching;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.*;
+import com.vz.esap.caching.model.*;
+import com.vz.esap.caching.service.OrderDetailsService;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+public class OrderDetailsServiceTest {
+
+    @Mock
+    private RestTemplate restTemplate;
+
+    @Mock
+    RedisTemplate redisTemplate;
+
+    @Mock
+    ValueOperations valueOperations;
+
+    @InjectMocks
+    OrderDetailsService orderDetailsService;
+
+    @Mock
+    ObjectMapper mapper;
+
+
+    @Test
+    public void test_from_cache_flow(){
+        String content = null;
+        try {
+            content = new String(Files.readAllBytes(Paths.get("src/test/java/com/vz/esap/caching/requestJson.json")), "UTF-8");
+            OrderResponse orderResponse = new OrderResponse();
+
+            GsonBuilder gsonBldr = new GsonBuilder();
+            gsonBldr.registerTypeAdapter(OrderRequest.class, new FooDeserializerFromJsonWithDifferentFields());
+            OrderRequest orderRequest = gsonBldr.create().fromJson(content, OrderRequest.class);
+
+            Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            Mockito.when(valueOperations.get(any(String.class))).thenReturn(orderResponse);
+
+            orderResponse  = orderDetailsService.getOrderData(orderRequest);
+            assertEquals("11572890",orderRequest.getOrderHeader().getWorkOrderId());
+            assertNotNull(orderResponse);
+
+        } catch (IOException  e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void test_service_call_flow(){
+        String content = null;
+        try {
+            content = new String(Files.readAllBytes(Paths.get("src/test/java/com/vz/esap/caching/requestJson.json")), "UTF-8");
+            OrderResponse orderResponse = null;
+            OrderResponse orderResponseFromServiceCall = prepareServiceResponse();
+
+            GsonBuilder gsonBldr = new GsonBuilder();
+            gsonBldr.registerTypeAdapter(OrderRequest.class, new FooDeserializerFromJsonWithDifferentFields());
+            OrderRequest orderRequest = gsonBldr.create().fromJson(content, OrderRequest.class);
+
+            Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            Mockito.when(valueOperations.get(any(String.class))).thenReturn(orderResponse);
+            Mockito.when(restTemplate.postForObject(anyString(),any(),any())).thenReturn(orderResponseFromServiceCall);
+
+            ReflectionTestUtils.setField(orderDetailsService,"orderDomainServiceBaseURL","http://e0somzstw01.vzbi.com:40046/ordering" );
+
+            orderResponseFromServiceCall  = orderDetailsService.getOrderData(orderRequest);
+            assertEquals("11572890",orderRequest.getOrderHeader().getWorkOrderId());
+            assertNotNull(orderResponseFromServiceCall);
+
+        } catch (IOException  e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private OrderResponse prepareServiceResponse() {
+
+        EntityGroupInfo entityGroupInfo = new EntityGroupInfo();
+        Entity entity = new Entity();
+        entity.setEntityValue("16123033494");
+        ParamDetail paramDetail = new ParamDetail();
+        paramDetail.setOrderId(Long.parseLong("82789932"));
+        paramDetail.setOrderDetailId(Long.parseLong("7029049812"));
+        paramDetail.setAction("n");
+        paramDetail.setParamName("OrderNumber");
+        paramDetail.setParamValue("27780803");
+        entity.setParamDetails(Arrays.asList(paramDetail));
+        entityGroupInfo.setEntity(Arrays.asList(entity));
+
+        OrderResponse orderResponseFromServiceCall = new OrderResponse();
+        orderResponseFromServiceCall.setEntityGroupInfo(Arrays.asList(entityGroupInfo));
+        orderResponseFromServiceCall.setStatusCode("0");
+        orderResponseFromServiceCall.setStatusDescription("SUCCESS");
+        return orderResponseFromServiceCall;
+    }
+
+    public class FooDeserializerFromJsonWithDifferentFields implements JsonDeserializer<OrderRequest> {
+
+        @Override
+        public OrderRequest deserialize
+                (JsonElement jElement, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException {
+            JsonObject jObject = jElement.getAsJsonObject();
+
+            OrderRequest orderRequest = new OrderRequest();
+            OrderHeader orderHeader = new OrderHeader();
+            EntitySearchDetails entitySearchDetails = new EntitySearchDetails();
+            SearchFilter searchFilter = new SearchFilter();
+
+            JsonObject orderHeaderObj = jObject.get("OrderHeader").getAsJsonObject();
+            String workOrderNumber = orderHeaderObj.get("WorkOrderNumber").getAsString();
+            String workOrderId = orderHeaderObj.get("WorkOrderId").getAsString();
+
+            JsonObject entitySearchInfo = jObject.get("entitySearchInfo").getAsJsonArray().get(0).getAsJsonObject();
+            String entityType = entitySearchInfo.get("entityType").getAsString();
+            entitySearchDetails.setEntityType(entityType);
+
+            String startIndex = entitySearchInfo.get("searchFilter").getAsJsonObject().get("startIndex").getAsString();
+            String endIndex = entitySearchInfo.get("searchFilter").getAsJsonObject().get("endIndex").getAsString();
+
+            searchFilter.setStartIndex(startIndex);
+            searchFilter.setEndIndex(endIndex);
+            entitySearchDetails.setSearchFilter(searchFilter);
+
+            orderHeader.setWorkOrderNumber(workOrderNumber);
+            orderHeader.setWorkOrderId(workOrderId);
+
+            orderRequest.setOrderHeader(orderHeader);
+            orderRequest.setEntitySearchDetails(Arrays.asList(entitySearchDetails));
+            return orderRequest;
+        }
+    }
+
+}
 
