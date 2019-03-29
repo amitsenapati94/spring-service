@@ -1,0 +1,244 @@
+pom.xml
+*******
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.1.2.RELEASE</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.vz.esap</groupId>
+	<artifactId>infrastructure-caching-service</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<name>infrastructure-caching-service</name>
+	<description>infrastructure-caching-service</description>
+
+	<properties>
+		<java.version>1.8</java.version>
+		<spring-cloud.version>Greenwich.RELEASE</spring-cloud.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-config</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
+          
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.swagger</groupId>
+			<artifactId>swagger-annotations</artifactId>
+			<version>1.5.6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.freemarker</groupId>
+			<artifactId>freemarker</artifactId>
+			<version>2.3.26-incubating</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.retry</groupId>
+			<artifactId>spring-retry</artifactId>
+			<version>1.2.2.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>io.lettuce</groupId>
+					<artifactId>lettuce-core</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+		</dependency>        
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-pool2</artifactId>
+			<version>2.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.8.5</version>
+		</dependency>
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger-ui</artifactId>
+			<version>2.9.2</version>
+		</dependency>
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger2</artifactId>
+			<version>2.9.2</version>
+		</dependency>
+	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+	<repositories>
+		<repository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/milestone</url>
+		</repository>
+	</repositories>
+
+</project>
+
+bootstarp.yml
+*************
+spring:
+  application:
+    name: infrastructure-caching-service
+  #profiles.active: sit1-tampa-pcf
+  cloud:
+    config:
+      uri: ${vcap.services.configServerURL.credentials.uri:https://infrastructure-esap-config-server-dit1.cfappstpanp.ebiz.verizon.com}
+      #uri: https://infrastructure-esap-config-server-dit1.cfappstpanp.ebiz.verizon.com
+
+security.basic.enabled: false
+management.security.enabled: false
+eureka.client.enabled: true
+server:
+ port: 40135
+
+
+application.properties
+**********************
+info.build.artifact=@project.artifactId@
+info.build.name=@project.name@
+info.build.description=@project.description@
+info.build.version=@project.version@
+info.build.timestamp=@timestamp@
+
+management.endpoints.web.exposure.include=*
+management.security.enabled=false
+
+application.yml
+***************
+security.basic.enabled: false
+management.security.enabled: false
+management.health.db.enabled: false
+endpoints.env.keys-to-sanitize: ${ENV_MASK_KEYS:TPL_DB_PASSWD,ACT_DB_PASSWD,IVP_DB_PASSWD,IVAPP_JAVA_KS_PASSWD,JAVA_CA_CERT_PWD,UTE_USER_ID,UTE_PASSWD}
+endpoints.restart.enabled: ${ESAP_ENDPOINT_RESTART_ENABLED:false}
+eureka.client.healthcheck.enabled: true
+orderdetails-service-response.ttl: 120
+---
+spring:
+ profiles: development
+logging:
+  file: ${spring.application.name}
+  level:
+    root: INFO
+orderDomain:
+  getOrderDetails: ${GET_ORDER_DETAILS_URL:https://order-orderdetails-service-dev.cfappstpanp.ebiz.verizon.com/ordering}
+
+---
+spring:
+ profiles: dit1-tampa-pcf
+logging:
+  file: ${spring.application.name}
+  level:
+    root: INFO
+orderDomain:
+  getOrderDetails: ${GET_ORDER_DETAILS_URL:https://order-orderdetails-service-dit1.cfappstpanp.ebiz.verizon.com/ordering}
+
+
+AppConfig.java
+**************
+
+package com.vz.esap.caching.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.web.client.RestTemplate;
+
+import java.text.SimpleDateFormat;
+
+/**
+ *
+ * @author Amit Senapati
+ *
+ */
+@Configuration
+public class AppConfig
+{
+
+	@Bean
+	public Jackson2ObjectMapperBuilder jacksonBuilder() {
+		Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
+		builder.indentOutput(true).dateFormat(
+				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+		return builder;
+	}
+
+
+	@Bean
+	public RestTemplate restTemplate() {
+		return new RestTemplate(clientHttpRequestFactory());
+	}
+
+	private ClientHttpRequestFactory clientHttpRequestFactory() {
+		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+		factory.setReadTimeout(180000);
+		factory.setConnectTimeout(180000);
+		return factory;
+	}
+}
+
