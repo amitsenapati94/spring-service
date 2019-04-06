@@ -1,0 +1,697 @@
+pom.xml
+*******
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.1.2.RELEASE</version>
+		<relativePath/> <!-- lookup parent from repository -->
+	</parent>
+	<groupId>com.vz.esap</groupId>
+	<artifactId>infrastructure-caching-service</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<name>infrastructure-caching-service</name>
+	<description>infrastructure-caching-service</description>
+
+	<properties>
+		<java.version>1.8</java.version>
+		<spring-cloud.version>Greenwich.RELEASE</spring-cloud.version>
+	</properties>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-config</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-hystrix</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-netflix-hystrix-dashboard</artifactId>
+          
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.swagger</groupId>
+			<artifactId>swagger-annotations</artifactId>
+			<version>1.5.6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.freemarker</groupId>
+			<artifactId>freemarker</artifactId>
+			<version>2.3.26-incubating</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.retry</groupId>
+			<artifactId>spring-retry</artifactId>
+			<version>1.2.2.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>io.lettuce</groupId>
+					<artifactId>lettuce-core</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis-reactive</artifactId>
+		</dependency>        
+        <dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>2.9.0</version>
+        </dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-pool2</artifactId>
+			<version>2.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.8.5</version>
+		</dependency>
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger-ui</artifactId>
+			<version>2.9.2</version>
+		</dependency>
+		<dependency>
+			<groupId>io.springfox</groupId>
+			<artifactId>springfox-swagger2</artifactId>
+			<version>2.9.2</version>
+		</dependency>
+	</dependencies>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.cloud</groupId>
+				<artifactId>spring-cloud-dependencies</artifactId>
+				<version>${spring-cloud.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
+
+	<repositories>
+		<repository>
+			<id>spring-milestones</id>
+			<name>Spring Milestones</name>
+			<url>https://repo.spring.io/milestone</url>
+		</repository>
+	</repositories>
+
+</project>
+
+bootstarp.yml
+*************
+spring:
+  application:
+    name: infrastructure-caching-service
+  #profiles.active: sit1-tampa-pcf
+  cloud:
+    config:
+      uri: ${vcap.services.configServerURL.credentials.uri:https://infrastructure-esap-config-server-dit1.cfappstpanp.ebiz.verizon.com}
+      #uri: https://infrastructure-esap-config-server-dit1.cfappstpanp.ebiz.verizon.com
+
+security.basic.enabled: false
+management.security.enabled: false
+eureka.client.enabled: true
+server:
+ port: 40135
+
+
+application.properties
+**********************
+info.build.artifact=@project.artifactId@
+info.build.name=@project.name@
+info.build.description=@project.description@
+info.build.version=@project.version@
+info.build.timestamp=@timestamp@
+
+management.endpoints.web.exposure.include=*
+management.security.enabled=false
+
+application.yml
+***************
+security.basic.enabled: false
+management.security.enabled: false
+management.health.db.enabled: false
+endpoints.env.keys-to-sanitize: ${ENV_MASK_KEYS:TPL_DB_PASSWD,ACT_DB_PASSWD,IVP_DB_PASSWD,IVAPP_JAVA_KS_PASSWD,JAVA_CA_CERT_PWD,UTE_USER_ID,UTE_PASSWD}
+endpoints.restart.enabled: ${ESAP_ENDPOINT_RESTART_ENABLED:false}
+eureka.client.healthcheck.enabled: true
+orderdetails-service-response.ttl: 120
+---
+spring:
+ profiles: development
+logging:
+  file: ${spring.application.name}
+  level:
+    root: INFO
+orderDomain:
+  getOrderDetails: ${GET_ORDER_DETAILS_URL:https://order-orderdetails-service-dev.cfappstpanp.ebiz.verizon.com/ordering}
+
+---
+spring:
+ profiles: dit1-tampa-pcf
+logging:
+  file: ${spring.application.name}
+  level:
+    root: INFO
+orderDomain:
+  getOrderDetails: ${GET_ORDER_DETAILS_URL:https://order-orderdetails-service-dit1.cfappstpanp.ebiz.verizon.com/ordering}
+
+
+AppConfig.java
+**************
+
+package com.vz.esap.caching.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.web.client.RestTemplate;
+
+import java.text.SimpleDateFormat;
+
+/**
+ *
+ * @author Amit Senapati
+ *
+ */
+@Configuration
+public class AppConfig
+{
+
+	@Bean
+	public Jackson2ObjectMapperBuilder jacksonBuilder() {
+		Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
+		builder.indentOutput(true).dateFormat(
+				new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"));
+		return builder;
+	}
+
+
+	@Bean
+	public RestTemplate restTemplate() {
+		return new RestTemplate(clientHttpRequestFactory());
+	}
+
+	private ClientHttpRequestFactory clientHttpRequestFactory() {
+		HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory();
+		factory.setReadTimeout(180000);
+		factory.setConnectTimeout(180000);
+		return factory;
+	}
+}
+
+
+RedisConfig.java
+*****************
+package com.vz.esap.caching.config;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.vz.esap.caching.controller.RedisInfoController;
+import com.vz.esap.caching.model.RedisInstanceInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
+
+/**
+ *
+ * @author Amit Senapati
+ *
+ */
+@Configuration
+public class RedisConfig {
+
+    private static Logger log = LoggerFactory.getLogger(RedisInfoController.class);
+
+
+    @Bean
+    public JedisConnectionFactory redisConnectionFactory() {
+
+        log.info("RedisConfig::redisConnectionFactory::Entry");
+        RedisInstanceInfo info = new RedisInstanceInfo();
+        String vcap = System.getenv("VCAP_SERVICES");
+        log.info("VCAP_SERVICES content: " + vcap);
+        log.info("Using GSON to parse the json...");
+        JsonElement root = new JsonParser().parse(vcap);
+        JsonObject redis = null;
+        if (root != null) {
+            if (root.getAsJsonObject().has("p.redis")) {
+                redis = root.getAsJsonObject().get("p.redis").getAsJsonArray().get(0).getAsJsonObject();
+                log.info("instance name: " + redis.get("name").getAsString());
+            } else if (root.getAsJsonObject().has("p-redis")) {
+                redis = root.getAsJsonObject().get("p-redis").getAsJsonArray().get(0).getAsJsonObject();
+                log.info("instance name: " + redis.get("name").getAsString());
+            } else {
+                log.info("ERROR: no redis instance found in VCAP_SERVICES");
+            }
+        }
+
+        if (redis != null) {
+            JsonObject creds = redis.get("credentials").getAsJsonObject();
+            info = new RedisInstanceInfo();
+            info.setHost(creds.get("host").getAsString());
+            info.setPort(creds.get("port").getAsInt());
+            info.setPassword(creds.get("password").getAsString());
+        }
+
+        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration(info.getHost(), info.getPort());
+        config.setPassword(info.getPassword());
+
+        //local setup
+        //RedisStandaloneConfiguration config = new RedisStandaloneConfiguration("10.77.66.87", 38655);
+        //config.setPassword("bc40c034-fba6-44fc-bea6-09e93e703d1e");
+
+
+        log.info("RedisConfig::redisConnectionFactory::Exit");
+        return new JedisConnectionFactory(config);
+    }
+
+    @Bean
+    public RedisTemplate redisTemplate() {
+        RedisTemplate redisTemplate = new RedisTemplate();
+        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        return redisTemplate;
+    }
+
+    @Bean
+    public StringRedisTemplate strRedisTemplate() {
+        StringRedisTemplate redisTemplate = new StringRedisTemplate();
+        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        return redisTemplate;
+    }
+} 
+
+SwaggerConfig.java
+******************
+package com.vz.esap.caching.config;
+
+import com.google.common.base.Predicate;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
+
+import static com.google.common.base.Predicates.or;
+import static springfox.documentation.builders.PathSelectors.regex;
+
+/**
+ * 
+ * @author Amit Senapati
+ *
+ */
+
+@Configuration
+@EnableSwagger2
+public class SwaggerConfig {
+
+	@Bean
+	public Docket restfulApi() {
+		return new Docket(DocumentationType.SWAGGER_2)
+				.groupName("service-api")
+				.select()
+				.paths(paths())
+				.build()
+				.apiInfo(apiInfo());
+	}
+
+	private Predicate<String> paths() {
+
+		return or(regex("/ordering*"));
+
+	}
+
+	private ApiInfo apiInfo() {
+
+		ApiInfo apiInfo = new ApiInfo(
+				"Infrastructure Caching Service",
+				"Infrastructure Caching Service:",
+				"1.0",
+				"http://oneconfluence.verizon.com/pages/viewpage.action?pageId=14748562#Order&ServiceDataModel-ServiceDescriptor",
+				"amit.senapati@verizon.com",
+				"Licence",
+				"http://oneconfluence.verizon.com/pages/viewpage.action?pageId=14748562#Order&ServiceDataModel-ServiceDescriptor"
+				);
+		return apiInfo;
+	}
+}
+
+
+OrderingServiceController.java
+******************************
+
+package com.vz.esap.caching.controller;
+
+import com.vz.esap.caching.model.OrderRequest;
+import com.vz.esap.caching.model.OrderResponse;
+import com.vz.esap.caching.service.OrderDetailsService;
+import io.swagger.annotations.Api;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RestController;
+/**
+ *
+ * @author Amit Senapati
+ *
+ */
+@RestController
+@RequestMapping("/ordering")
+@Api(value = "ordering", description = "Infrastructure Caching Service API")
+public class OrderingServiceController {
+
+    @Autowired
+    OrderDetailsService orderDetailsService;
+
+    private static Logger log = LoggerFactory.getLogger(OrderingServiceController.class);
+
+
+    @RequestMapping(value = "/getOrderDetails", method = RequestMethod.POST, produces = "application/json")
+    public OrderResponse getOrderData(@RequestBody OrderRequest orderRequest){
+
+        log.info("OrderingServiceController::getOrderData::Entry");
+        OrderResponse orderResponse = orderDetailsService.getOrderData(orderRequest);
+        log.info("OrderingServiceController::getOrderData::Exit");
+        return orderResponse;
+    }
+}
+
+
+OrderDetailsService.java
+************************
+
+package com.vz.esap.caching.service;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vz.esap.caching.model.EntitySearchDetails;
+import com.vz.esap.caching.model.OrderRequest;
+import com.vz.esap.caching.model.OrderResponse;
+import com.vz.esap.caching.model.SearchFilter;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.concurrent.TimeUnit;
+/**
+ *
+ * @author Amit Senapati
+ *
+ */
+@Component
+public class OrderDetailsService {
+
+    @Autowired
+    private RestTemplate restTemplate;
+
+    @Autowired
+    RedisTemplate redisTemplate;
+
+    @Autowired
+    ObjectMapper mapper;
+
+    @Value("${orderDomain.getOrderDetails:}")
+    private String orderDomainServiceBaseURL;
+
+    @Value("${orderdetails-service-response.ttl:}")
+    private int ttl;
+
+    private static Logger log = LoggerFactory.getLogger(OrderDetailsService.class);
+
+
+    public OrderResponse getOrderData(OrderRequest orderRequest){
+        log.info("OrderDetailsService::getOrderData::Entry");
+        OrderResponse orderResponse = null;
+        String key = null;
+        String orderId = orderRequest.getOrderHeader().getWorkOrderId();
+        EntitySearchDetails entitySearchDetails = orderRequest.getEntitySearchDetails().get(0);
+        SearchFilter searchFilter = entitySearchDetails.getSearchFilter();
+        String startIndex = searchFilter.getStartIndex();
+        String endIndex = searchFilter.getEndIndex();
+        String entityType = entitySearchDetails.getEntityType();
+        searchFilter.setParamNameList(null);
+
+        if(StringUtils.isNotBlank(startIndex) && StringUtils.isNotBlank(endIndex)) {
+            key = orderId.concat(":").concat(entityType).concat(":").concat(startIndex).concat(":").concat(endIndex);
+        }else {
+            key = orderId.concat(":").concat(entityType);
+        }
+
+        log.info("redis key: "+ key);
+
+        ValueOperations values = redisTemplate.opsForValue();
+
+        OrderResponse orderResponseFromCache = (OrderResponse)values.get(key);
+
+        if(orderResponseFromCache == null ) {
+            log.info("making order details service call");
+            try {
+                log.info("OrderRequest Object   : {} ", mapper.writeValueAsString(orderRequest));
+            }catch(JsonProcessingException e){
+                throw new RuntimeException("unable to parse OrderRequest: "+ e);
+            }
+            String orderDomainServiceURL = orderDomainServiceBaseURL.concat("/getOrderDetails");
+            log.info("orderDomainServiceBaseURL: "+orderDomainServiceBaseURL);
+            log.info("orderDomainServiceURL: " +orderDomainServiceURL);
+            orderResponse = restTemplate.postForObject(orderDomainServiceURL, orderRequest,
+                    OrderResponse.class);
+            if(orderResponse.getEntityGroupInfo() != null && orderResponse.getEntityGroupInfo().get(0) != null) {
+                log.info("Received order service response: " + orderResponse.getEntityGroupInfo().get(0).getEntity().size());
+            }
+            else{
+                log.info("Received order service response: no entity" );
+            }
+            values.set(key,orderResponse,ttl, TimeUnit.MINUTES);
+        }
+        else{
+            log.info("getting data from cache");
+            log.info("OrderDetailsService::getOrderData::Exit");
+            return (OrderResponse)orderResponseFromCache;
+        }
+
+        log.info("OrderDetailsService::getOrderData::Exit");
+        return orderResponse;
+    }
+
+}
+
+OrderDetailsServiceTest.java
+****************************
+
+package com.vz.esap.caching;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.*;
+import com.vz.esap.caching.model.*;
+import com.vz.esap.caching.service.OrderDetailsService;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.web.client.RestTemplate;
+
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+
+@RunWith(SpringJUnit4ClassRunner.class)
+public class OrderDetailsServiceTest {
+
+    @Mock
+    private RestTemplate restTemplate;
+
+    @Mock
+    RedisTemplate redisTemplate;
+
+    @Mock
+    ValueOperations valueOperations;
+
+    @InjectMocks
+    OrderDetailsService orderDetailsService;
+
+    @Mock
+    ObjectMapper mapper;
+
+
+    @Test
+    public void test_from_cache_flow(){
+        String content = null;
+        try {
+            content = new String(Files.readAllBytes(Paths.get("src/test/java/com/vz/esap/caching/requestJson.json")), "UTF-8");
+            OrderResponse orderResponse = new OrderResponse();
+
+            GsonBuilder gsonBldr = new GsonBuilder();
+            gsonBldr.registerTypeAdapter(OrderRequest.class, new FooDeserializerFromJsonWithDifferentFields());
+            OrderRequest orderRequest = gsonBldr.create().fromJson(content, OrderRequest.class);
+
+            Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            Mockito.when(valueOperations.get(any(String.class))).thenReturn(orderResponse);
+
+            orderResponse  = orderDetailsService.getOrderData(orderRequest);
+            assertEquals("11572890",orderRequest.getOrderHeader().getWorkOrderId());
+            assertNotNull(orderResponse);
+
+        } catch (IOException  e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
+    public void test_service_call_flow(){
+        String content = null;
+        try {
+            content = new String(Files.readAllBytes(Paths.get("src/test/java/com/vz/esap/caching/requestJson.json")), "UTF-8");
+            OrderResponse orderResponse = null;
+            OrderResponse orderResponseFromServiceCall = prepareServiceResponse();
+
+            GsonBuilder gsonBldr = new GsonBuilder();
+            gsonBldr.registerTypeAdapter(OrderRequest.class, new FooDeserializerFromJsonWithDifferentFields());
+            OrderRequest orderRequest = gsonBldr.create().fromJson(content, OrderRequest.class);
+
+            Mockito.when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+            Mockito.when(valueOperations.get(any(String.class))).thenReturn(orderResponse);
+            Mockito.when(restTemplate.postForObject(anyString(),any(),any())).thenReturn(orderResponseFromServiceCall);
+
+            ReflectionTestUtils.setField(orderDetailsService,"orderDomainServiceBaseURL","http://e0somzstw01.vzbi.com:40046/ordering" );
+
+            orderResponseFromServiceCall  = orderDetailsService.getOrderData(orderRequest);
+            assertEquals("11572890",orderRequest.getOrderHeader().getWorkOrderId());
+            assertNotNull(orderResponseFromServiceCall);
+
+        } catch (IOException  e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private OrderResponse prepareServiceResponse() {
+
+        EntityGroupInfo entityGroupInfo = new EntityGroupInfo();
+        Entity entity = new Entity();
+        entity.setEntityValue("16123033494");
+        ParamDetail paramDetail = new ParamDetail();
+        paramDetail.setOrderId(Long.parseLong("82789932"));
+        paramDetail.setOrderDetailId(Long.parseLong("7029049812"));
+        paramDetail.setAction("n");
+        paramDetail.setParamName("OrderNumber");
+        paramDetail.setParamValue("27780803");
+        entity.setParamDetails(Arrays.asList(paramDetail));
+        entityGroupInfo.setEntity(Arrays.asList(entity));
+
+        OrderResponse orderResponseFromServiceCall = new OrderResponse();
+        orderResponseFromServiceCall.setEntityGroupInfo(Arrays.asList(entityGroupInfo));
+        orderResponseFromServiceCall.setStatusCode("0");
+        orderResponseFromServiceCall.setStatusDescription("SUCCESS");
+        return orderResponseFromServiceCall;
+    }
+
+    public class FooDeserializerFromJsonWithDifferentFields implements JsonDeserializer<OrderRequest> {
+
+        @Override
+        public OrderRequest deserialize
+                (JsonElement jElement, Type typeOfT, JsonDeserializationContext context)
+                throws JsonParseException {
+            JsonObject jObject = jElement.getAsJsonObject();
+
+            OrderRequest orderRequest = new OrderRequest();
+            OrderHeader orderHeader = new OrderHeader();
+            EntitySearchDetails entitySearchDetails = new EntitySearchDetails();
+            SearchFilter searchFilter = new SearchFilter();
+
+            JsonObject orderHeaderObj = jObject.get("OrderHeader").getAsJsonObject();
+            String workOrderNumber = orderHeaderObj.get("WorkOrderNumber").getAsString();
+            String workOrderId = orderHeaderObj.get("WorkOrderId").getAsString();
+
+            JsonObject entitySearchInfo = jObject.get("entitySearchInfo").getAsJsonArray().get(0).getAsJsonObject();
+            String entityType = entitySearchInfo.get("entityType").getAsString();
+            entitySearchDetails.setEntityType(entityType);
+
+            String startIndex = entitySearchInfo.get("searchFilter").getAsJsonObject().get("startIndex").getAsString();
+            String endIndex = entitySearchInfo.get("searchFilter").getAsJsonObject().get("endIndex").getAsString();
+
+            searchFilter.setStartIndex(startIndex);
+            searchFilter.setEndIndex(endIndex);
+            entitySearchDetails.setSearchFilter(searchFilter);
+
+            orderHeader.setWorkOrderNumber(workOrderNumber);
+            orderHeader.setWorkOrderId(workOrderId);
+
+            orderRequest.setOrderHeader(orderHeader);
+            orderRequest.setEntitySearchDetails(Arrays.asList(entitySearchDetails));
+            return orderRequest;
+        }
+    }
+
+}
+
