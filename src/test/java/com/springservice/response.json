@@ -1,0 +1,31 @@
+
+{
+"before": "null",
+"after": {
+"id": 10,
+"description": "test9",
+"name": "9"
+},
+"source": {
+"version": "0.10.0.Final",
+"connector": "postgresql",
+"name": "dbserver1",
+"ts_ms": 1574622430767,
+"snapshot": "false",
+"db": "tst_db",
+"schema": "inventory",
+"table": "inv_tn",
+"txId": 705,
+"lsn": 37111208
+},
+"op": "c",
+"ts_ms": 1574622431034,
+"audit": {
+"client_date": 1566461551000000,
+"usecase": "CREATE TN",
+"user_name": "farmerbob"
+}
+}
+
+
+
